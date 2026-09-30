@@ -3,51 +3,1424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modificacion de Información de Títulos Extranjeros</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+    <title>Sistema de Modificación de Títulos Extranjeros</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    
 
-    <div class="container-fluid min-vh-100 d-flex flex-column justify-content-center align-items-center bg-light">
+
+</head>
+<body class="bg-light">
+
+
+    <div id="login-card" class="container vh-100 d-flex justify-content-center align-items-center">
+        <div class="card shadow p-4" style="width: 350px;">
+            <h4 class="text-center mb-3">Login</h4>
+            <form id="loginForm">
+                <input type="text" id="username" class="form-control mb-2" placeholder="Usuario" required>
+                <input type="password" id="password" class="form-control mb-2" placeholder="Contraseña" required>
+                <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-interface" class="container-fluid p-4">
         
-        <div id="login-card" class="card shadow-lg p-4" style="max-width: 400px; width: 100%;">
-            <div class="card-body text-center">
-                <h3 class="mb-4 text-primary">Modificacion de Información de Títulos Extranjeros</h3>
-                <p class="text-muted">Ingrese sus credenciales</p>
+        <div class="row align-items-center mb-4 mt-3">
+            <div class="col-2"></div>
+            
+            <div class="col-8 text-center">
+                <h2 class="fw-bold text-secondary m-0">Sistema de Modificación de Títulos Extranjeros</h2>
+            </div>
+            
+            <div class="col-2 text-end">
+                <button id="btnSalir" class="btn btn-danger px-4 fw-bold shadow">SALIR</button>
+            </div>
+        </div>
+
+
+        <div id="mainProgressContainer" class="progress progress-thin-wrapper d-none">
+            <div id="mainProgressBar" 
+                 class="progress-bar progress-bar-striped progress-bar-animated progress-bar-pleasant" 
+                 role="progressbar" 
+                 style="width: 0%">
+            </div>
+        </div>
+
+
+        <div class="card p-3 shadow-sm mb-3">
+            <h4 class="card-title mb-3" text-secondary fw-bold>Carga de Documentos</h4>
+            
+            <div class="row g-3 align-items-end">
                 
-                <form id="loginForm">
-                    <div class="mb-3 text-start">
-                        <label for="username" class="form-label">Usuario</label>
-                        <input type="text" class="form-control" id="username" required placeholder="Ej: admin">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold"> Ingrese el Memorando 
+                        <span class="text-muted fw-normal ms-2 small">Ej: MINEDEC_DRT-2026_0001-M</span>
+                    </label>
+                    
+                    <div class="input-group mb-3">
+                        <button class="btn btn-secondary" type="button" id="btnFakeFile">Seleccione el archivo</button>
+                        <input type="text" class="form-control fw-bold text-primary" id="nombreMemoOculto" placeholder="Ningún archivo seleccionado..." style="box-shadow: none;">
+                        <input type="file" id="inputPdfMemo" class="d-none" accept=".pdf">
                     </div>
-                    <div class="mb-3 text-start">
-                        <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control" id="password" required placeholder="****">
+                    
+                    <div id="memoFeedback" class="form-text" style="min-height: 21px;"></div>
+                    
+                    <input type="hidden" id="nombreMemo" value=""> 
+                </div>
+
+                <!--<div class="col-md-5">
+                    <label class="form-label fw-bold">Matriz de Datos (.xlsx)</label>
+                    <input type="file" id="fileExcel" class="form-control" accept=".xlsx, .xls" disabled>
+                    <div id="excelFeedback" class="form-text"></div>
+                </div> codigo anterior (si funciona)--> 
+                             
+                
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Matriz de Datos (.xlsx)</label>
+                    <div class="input-group mb-3">
+                        <button class="btn btn-secondary" type="button" id="btnFakeExcel" disabled>Seleccione el archivo</button>
+                        <input type="text" class="form-control fw-bold text-primary" id="nombreExcelOculto" placeholder="Ningún archivo seleccionado..." style="box-shadow: none;" disabled>
+                        <input type="file" id="fileExcel" class="d-none" accept=".xlsx, .xls">
                     </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">Ingresar</button>
-                    </div>
-                </form>
-                <div id="loginError" class="mt-3 text-danger d-none">
-                    Usuario o contraseña incorrectos.
+                    <div id="excelFeedback" class="form-text" style="min-height: 21px;"></div>
+                </div>
+
+                <div class="col-md-2">
+                    <button id="btnProcesar" class="btn btn-success w-100 fw-bold mb-3" disabled>PROCESAR</button>
+                    <div class="form-text" style="min-height: 21px;"></div>
                 </div>
             </div>
         </div>
 
-        <div id="main-panel" class="d-none text-center w-100">
-            <h2 class="mb-4">Bienvenido al Sistema</h2>
-            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                <button id="btnMatriz" class="btn btn-success btn-lg px-5">
-                    Matriz de modificaciones
-                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
-                </button>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow mb-3">
+                    <div class="card-header bg-secondary text-white">1. Pre-Modificación</div>
+                    <div id="containerPre" class="card-body p-0">
+                        <table class="table table-bordered table-sm table-striped mb-0" id="tablaPre">
+                            <thead class="table-dark sticky-top"></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div id="statusArea" class="mt-4 container text-start"></div>
+
+            <div class="col-md-6">
+                <div class="card shadow mb-3">
+                    <div class="card-header bg-info text-white">2. Simulación (Post)</div>
+                    <div id="containerPost" class="card-body p-0">
+                        <table class="table table-bordered table-sm table-striped mb-0" id="tablaPost">
+                            <thead class="table-dark sticky-top"></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <div class="card shadow mt-2">
+            <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold">Logs del Proceso</span>
+                <div id="actionButtons" class="d-none">
+                    <button id="btnCommit" class="btn btn-primary fw-bold px-3 me-3">CONFIRMAR CAMBIOS (COMMIT)</button>
+                    <button id="btnRollback" class="btn btn-danger fw-bold px-3">CANCELAR (ROLLBACK)</button>
+                </div>
+            </div>
+            <div class="mb-3">
+                    <textarea 
+                    id="logArea" 
+                    class="form-control font-monospace shadow-sm" 
+                    rows="6" 
+                    readonly 
+                    style="background-color: #e9ecef; color: #495057; resize: none;"></textarea>
+            </div>
+        </div>
     </div>
 
-    <script src="js/logic.js"></script>
+    <div class="modal fade" id="errorModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold">⚠️ Errores en Archivo Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul id="errorList" class="list-group"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="reporteModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">📊 Reporte de Procesamiento</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">
+                        Revise el estado de cada registro. <br>
+                        <small class="text-danger fw-bold">Los registros marcados con ERROR (rojo) NO se actualizarán.</small>
+                    </p>
+                    <div id="listaReporte" class="list-group"></div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <small class="text-muted">Estado del proceso:</small>
+        
+                        <div>
+                            <button type="button" class="btn btn-warning me-2" onclick="descargarSqlDebug()">
+                                🐞 Descargar SQL
+                            </button>
+            
+                            <button id="btnConfirmarModal" type="button" class="btn btn-dark fw-bold px-4" data-bs-dismiss="modal">
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmacionModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold">⚠️ Confirmación de Nombre</h5>
+                </div>
+                <div class="modal-body">
+                    <p>El nombre del archivo ingresado no posee esta estructura: <strong>MINEDEC-DIRECCION-AÑO-NUMEROMEMO-M</strong>), desea continuar?</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" id="btnConfirmarSi" class="btn btn-success fw-bold px-4">Si</button>
+                    <button type="button" id="btnConfirmarNo" class="btn btn-danger fw-bold px-4">No</button>
+                </div>
+            </div>
+        </div>
+    </div>    
+
+<div id="devDbInfo" class="dev-db-info"></div>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
+
+
+<script src="js/bootstrap.bundle.min.js"></script>
+
+<script src="paises.js"></script>
+
+<script>
+    /// Inicialización de Modales
+    const myReporteModal = new bootstrap.Modal(document.getElementById('reporteModal'));
+    const myErrorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    const myConfirmacionModal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
+
+    // Variables Globales
+    let sessionUserId = null;
+    let sessionIp = null;
+    let sessionDate = null;
+    let currentTxId = null;
+    let progressInterval = null; 
+    let globalDatosPre = [];
+    let globalDatosPost = [];
+    let currentSqlDebug = ""; 
+
+    const mapTipos = {
+        'IOBS': 'Ingreso de nueva observación',
+        'MOBS': 'Modificación de observación existente',
+        'AOBS': 'Agregación de texto al final de una observación existente',
+        'EOBS': 'Eliminación de observacion',
+        'CTIT': 'Cambio de nombre de titulación del titulado',
+        'CNOM': 'Cambio de nombres de un titulado',
+        'CIDE': 'Cambio de Identificación',
+        'ANUT': 'Anulación de Titulación',
+        'CNIV': 'Cambio de nivel de formación',
+        'CIES': 'Cambio de Institución de Educación Superior',
+        'CGEN': 'Cambio de género',
+        'CCON': 'Cambio de Campo de Conocimiento',
+        'CNAC': 'Cambio de Nacionalidad'
+    };
+
+    // DOM Elements
+    const inputPdfMemo = document.getElementById('inputPdfMemo');
+    const btnFakeFile = document.getElementById('btnFakeFile'); // <-- El botón gris
+    const nombreMemoOculto = document.getElementById('nombreMemoOculto'); // <-- CORREGIDO: Apunta a la caja visible
+    const nombreMemo = document.getElementById('nombreMemo'); // <-- El oculto que guardamos por si acaso
+    const fileExcelInput = document.getElementById('fileExcel');
+    const btnProcesar = document.getElementById('btnProcesar');
+    const memoFeedback = document.getElementById('memoFeedback');
+    const excelFeedback = document.getElementById('excelFeedback');
+    const logArea = document.getElementById('logArea');
+    const actionButtons = document.getElementById('actionButtons');
+    const btnEntendidoModal = document.getElementById('btnConfirmarModal');
+    
+    // Elementos barra progreso
+    const mainProgressContainer = document.getElementById('mainProgressContainer');
+    const mainProgressBar = document.getElementById('mainProgressBar');
+
+    fileExcelInput.addEventListener('click', function() { this.value = null; });
+
+        // 1. LOGIN
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ usuario: u, password: p })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    sessionUserId = data.userId;
+                    sessionIp = data.ip;
+                    sessionDate = data.fechaIngreso;
+                    document.getElementById('login-card').classList.add('d-none');
+                    document.getElementById('main-interface').style.display = 'block';
+                } else { alert(data.message); }
+            } catch(err) { alert("Error de conexión"); }
+        });
+
+        // 2. SALIR
+        document.getElementById('btnSalir').addEventListener('click', async () => {
+            if (confirm("¿Cerrar sesión?")) {
+                location.reload(); 
+            }
+        });
+       
+        
+        
+        // 3. VALIDACIÓN MEMO
+        
+            // 1. Esta se dispara al salir del campo de texto (Evento Blur)
+            function validarTextoMemo() {
+                // Usamos 'inputPdfMemo' que es el ID que tienes en tu Parte 2
+                //inputPdfMemo.value = inputPdfMemo.value.toUpperCase().trim();
+                //const texto = inputPdfMemo.value;
+                nombreMemoOculto.value = nombreMemoOculto.value.toUpperCase().trim();
+                const texto = nombreMemoOculto.value;
+
+                // --- REFUERZO DE SEGURIDAD ---
+                // Cada vez que el PDF cambia o se revalida, limpiamos el Excel 
+                // para obligar a una selección nueva que corresponda al PDF actual.
+                fileExcelInput.value = ''; 
+                if (nombreExcelOculto) nombreExcelOculto.value = '';
+                if (excelFeedback) excelFeedback.textContent = '';
+                // -----------------------------
+
+                if (texto !== "") {
+                    // SI HAY TEXTO -> LLAMAMOS A APROBAR
+                    aprobarMemo(); 
+                } else {
+                    // SI ESTÁ VACÍO -> BLOQUEAMOS
+                    setFeedback(memoFeedback, "El memorando es obligatorio", 'error');
+                    fileExcelInput.disabled = true;
+                    btnFakeExcel.disabled = true;
+                }
+            }
+
+            // 2. Esta es la que efectivamente "despierta" al Excel
+            function aprobarMemo() {
+                setFeedback(memoFeedback, "Nombre de archivo correcto", 'success');
+                fileExcelInput.disabled = false;
+                btnFakeExcel.disabled = false;
+                try { myConfirmacionModal.hide(); } catch (e) {}
+            }
+
+            function rechazarMemo() {
+                inputPdfMemo.value = ''; 
+                nombreMemoOculto.value = '';
+                fileExcelInput.disabled = true;
+                fileExcelInput.value = '';
+                memoFeedback.textContent = '';
+                btnProcesar.disabled = true;
+                try { myConfirmacionModal.hide(); } catch (e) {}
+                //setTimeout(() => fileMemoInput.focus(), 300);
+            }
+
+    
+    // Lógica principal de validación memorando
+    inputPdfMemo.addEventListener('change', function() {
+        // 1. Limpieza inicial y extracción
+        if (!this.files.length) { rechazarMemo(); return; }
+        const texto = this.files[0].name.replace(/\.[^/.]+$/, "").toUpperCase().trim();
+        nombreMemoOculto.value = texto; // Guardamos el nombre validado en secreto
+
+        //const year = new Date().getFullYear(); //solo sirve si se valida año actual
+        
+        // 2. Regex (Sin .pdf)
+        const regex = new RegExp(`^MINEDEC[-_][^\\s-_]+[-_]\\d{4}[-_]\\d{4}[-_]M$`);
+
+        if (regex.test(texto)) {
+            inputPdfMemo.disabled = true;
+
+            fetch('/api/check-memo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombreMemo: texto })
+            })
+            .then(res => res.json())
+            .then(data => {
+                inputPdfMemo.disabled = false;
+                
+                // VALIDACIÓN EXTRA: Si hay una ventana modal abierta (Resultados), NO mostrar alertas
+                if (document.querySelector('.modal.show')) return;
+
+                if (!data.canProceed) {
+                    // --- CASO ERROR (BLOQUEANTE) ---
+                    alert(data.message + "\n\nSi necesitas reprocesar, edita el nombre en la caja de texto añadiendo '-REPROCESADO'.");
+                    
+                    // Solo bloqueamos el Excel, NO borramos el PDF ni el texto
+                    fileExcelInput.disabled = true;
+
+                } else {
+                    // --- CASO EXITOSO O ADVERTENCIA ---
+                    if (data.exists) {
+                        alert(data.message); 
+                    }
+                    // IMPORTANTE: Quitamos el fileMemoInput.focus() de aquí para romper el bucle
+                    aprobarMemo(); 
+                }
+            })
+            .catch(err => {
+                inputPdfMemo.disabled = false;
+                console.error(err);
+            });
+
+        } else {
+            // Solo muestra modal de ayuda si NO hay otro modal abierto
+            if (!document.querySelector('.modal.show')) {
+                myConfirmacionModal.show();
+            }
+        }
+    });
+    
+
+    document.getElementById('btnConfirmarSi').addEventListener('click', aprobarMemo);
+    document.getElementById('btnConfirmarNo').addEventListener('click', rechazarMemo);
+
+    // 4. VALIDACIÓN EXCEL
+    fileExcelInput.addEventListener('change', async () => {
+        btnProcesar.disabled = true;
+        excelFeedback.textContent = '';
+        if (!fileExcelInput.files.length) return;
+
+        const formData = new FormData();
+        formData.append('archivoExcel', fileExcelInput.files[0]);
+        setFeedback(excelFeedback, "Validando estructura...", 'info');
+
+        try {
+            const res = await fetch('/api/check-excel', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.valid) {
+                setFeedback(excelFeedback, "Estructura correcta.", 'success');
+                btnProcesar.disabled = false;
+            } else {
+                setFeedback(excelFeedback, "Errores encontrados.", 'error');
+                fileExcelInput.value = '';
+                showErrorModal(data.details || [data.message]);
+            }
+        } catch (err) {
+            setFeedback(excelFeedback, "Error al validar Excel.", 'error');
+            fileExcelInput.value = '';
+        }
+    });
+
+    // 5. PROCESAR (CORREGIDO: endpoint y parámetros)
+    btnProcesar.addEventListener('click', async () => {
+
+        console.log("=== REVISIÓN ANTES DE ENVIAR ===");
+        console.log("PDF a enviar:", inputPdfMemo.files[0]); // ¿Dirá undefined?
+        console.log("Excel a enviar:", fileExcelInput.files[0]);
+        console.log("Nombre Memo:", nombreMemoOculto.value);
+
+        btnProcesar.disabled = true;
+        inputPdfMemo.disabled = true;
+        fileExcelInput.disabled = true;
+        logArea.value = "Iniciando procesamiento...\n";
+        
+        renderTable([], 'tablaPre');
+        renderTable([], 'tablaPost');
+        actionButtons.classList.add('d-none');
+
+        mainProgressContainer.classList.remove('d-none');
+        startProgress();
+
+        const formData = new FormData();
+        // Enviamos el texto escrito por el usuario:
+        formData.append('nombreMemo', nombreMemoOculto.value);
+        // Enviamos el archivo Excel:
+        formData.append('archivoExcel', fileExcelInput.files[0]);
+        // Enviamos el archivo PDF nuevo:
+        formData.append('archivoPdf', document.getElementById('inputPdfMemo').files[0]);
+
+        formData.append('userId', sessionUserId);
+        formData.append('ipOrigen', sessionIp); // Antes userIp
+        formData.append('fechaIngresoSession', sessionDate); // Nuevo campo requerido
+
+        try {
+            // CORRECCIÓN PRINCIPAL: Ruta cambiada a /api/upload-matriz
+            const res = await fetch('/api/upload-matriz', { method: 'POST', body: formData });
+            
+            // Verificamos si la respuesta es JSON antes de parsear
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("El servidor devolvió un error no JSON (posiblemente 404 o 500 html)");
+            }
+
+            const data = await res.json();
+            stopProgress();
+
+            if (data.success) {
+                currentTxId = data.transactionId;
+                globalDatosPre = data.datosPre || [];
+                globalDatosPost = normalizarDatosPost(data.reporte, data.datosPost); // CORRECCIÓN: Normalizamos POST usando el reporte como guía maestra
+
+                // --- CAMBIO AQUÍ: CONSTRUIMOS EL TXT A TU GUSTO ---
+                const parteSelects = data.seccionSelects || "-- Sin Selects de verificación --";
+                const parteUpdates = data.seccionUpdates || "-- Sin Scripts de actualización --";
+                const separador = "\n\n======================================================\n" + 
+                                "=== SEPARACIÓN: ABAJO ESTÁN LOS UPDATES ===\n" + 
+                                "======================================================\n\n";
+    
+                // Unimos: Selects + Separador + Updates
+                currentSqlDebug = parteSelects + separador + parteUpdates;
+
+                // 1. CÁLCULO DE ESTADÍSTICAS (MOVIDO ARRIBA)
+                const total = data.reporte.length;
+                const ok = data.reporte.filter(r => r.estado === 'OK').length;
+                const err = data.reporte.filter(r => r.estado === 'ERROR' || r.estado === 'ERROR CRITICO').length;
+
+                // 2. RENDERIZADO CONDICIONAL DE TABLAS
+                if (ok > 0) {
+                    // Si hay éxitos, mostramos los datos y alineamos
+                    renderTable(globalDatosPre, 'tablaPre');
+                    renderTable(globalDatosPost, 'tablaPost');
+                    alinearTablas('tablaPre', 'tablaPost');
+                    activarSincronizacion();
+                } else {
+                    // Si todo falló (0 éxitos), limpiamos las tablas completamente
+                    renderTable([], 'tablaPre');
+                    renderTable([], 'tablaPost');
+                }
+
+                // 3. LOGS Y BOTONES
+                logArea.value += `\n--------------------------------------\n`;
+                logArea.value += `RESULTADO DEL ANÁLISIS:\n`;
+                // Usamos la nueva variable del backend para la matriz original (o 'total' por defecto si falla)
+                logArea.value += `Numero de registros de la matriz: ${data.totalMatrizOriginal || '?'}\n`;
+                logArea.value += `Numero de registros procesados: ${total}\n`; 
+                logArea.value += `Registros procesados exitosamente: ${ok}\n`;
+                logArea.value += `Registros NO procesados (Errores): ${err}\n`;
+                logArea.value += `--------------------------------------\n\n`;
+
+                if (ok > 0) {
+                    logArea.value += `Esperando confirmación del usuario...\n`;
+                    actionButtons.classList.remove('d-none');
+                } else {
+                    logArea.value += `⚠️ ALERTA: No hay registros válidos para guardar.\n`;
+                    logArea.value += `No se puede realizar Commit.\n`;
+                    actionButtons.classList.add('d-none'); 
+                }
+                mostrarReporteDetallado(data.reporte);
+
+            } else {
+                logArea.value += `[ERROR] ${data.message}\n`;
+                alert("Error en el procesamiento: " + data.message);
+                resetInterface();
+            }
+        } catch (err) {
+            stopProgress();
+            console.error(err);
+            logArea.value += `[FATAL] Error: ${err.message}\n`;
+            alert("Error de conexión o respuesta inválida del servidor.");
+            resetInterface();
+        }
+    });
+
+    // 6. COMMIT / ROLLBACK
+    document.getElementById('btnCommit').onclick = () => handleAction('/api/commit');
+    document.getElementById('btnRollback').onclick = () => handleAction('/api/rollback');
+
+    async function handleAction(endpoint) {
+        if (!currentTxId) {
+            resetInterface();
+            return;
+        }
+        const esCommit = (endpoint === '/api/commit');
+        logArea.value += esCommit 
+            ? "\n>>> Enviando confirmación (COMMIT)... espere..." 
+            : "\n>>> Cancelando operación (ROLLBACK)...";
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ transactionId: currentTxId })
+            });
+            const data = await res.json();
+            
+            if (esCommit) {
+                if (data.success) {
+                    logArea.value += `\n[OK] ${data.message}`;
+
+                    if (data.finalUrl) {
+                        logArea.value += `\n[INFO] Descargando reporte oficial...`;
+                        try {
+                            const link = document.createElement('a');
+                            link.href = data.finalUrl;
+                            link.download = data.finalUrl.split('/').pop();
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        } catch (e) {
+                            console.error("Error auto-descarga", e);
+                            alert("Proceso correcto, pero falló la descarga automática.");
+                        }
+                    } 
+                    setTimeout(() => {
+                        alert("Proceso completado exitosamente.\nSe ha descargado el reporte.");
+                        resetInterface();
+                    }, 500);
+
+                } else {
+                    logArea.value += `\n[ERROR] ${data.message}`;
+                    alert("Error al guardar en BD: " + data.message);
+                    resetInterface();
+                }
+            } else {
+                alert("Proceso cancelado. No se realizaron cambios.");
+                resetInterface();
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("Error de conexión al intentar ejecutar la acción.");
+        }
+    }
+
+    // Funciones Auxiliares
+    function startProgress() {
+        let width = 0;
+        mainProgressBar.style.width = '0%';
+        mainProgressContainer.classList.remove('d-none');
+        progressInterval = setInterval(() => {
+            if (width >= 90) clearInterval(progressInterval);
+            else {
+                width += 5;
+                mainProgressBar.style.width = width + '%';
+            }
+        }, 200);
+    }
+
+    function stopProgress() {
+        clearInterval(progressInterval);
+        mainProgressBar.style.width = '100%';
+        setTimeout(() => {
+            mainProgressContainer.classList.add('d-none');
+            mainProgressBar.style.width = '0%';
+        }, 500);
+    }
+
+    function resetInterface() {
+        inputPdfMemo.value = '';
+        nombreMemoOculto.value = '';
+        fileExcelInput.value = '';
+        nombreExcelOculto.value = '';
+        inputPdfMemo.disabled = false;
+        fileExcelInput.disabled = true; 
+
+        // Si tienes un botón falso para el Excel, también deberíamos bloquearlo aquí por seguridad
+        const btnFakeExcel = document.getElementById('btnFakeExcel');
+        if (btnFakeExcel) btnFakeExcel.disabled = true;
+        
+        btnProcesar.disabled = true;
+        memoFeedback.textContent = '';
+        excelFeedback.textContent = '';
+        renderTable([], 'tablaPre');
+        renderTable([], 'tablaPost');
+        logArea.value = '';
+        actionButtons.classList.add('d-none');
+        currentTxId = null;
+        globalDatosPre = [];
+        globalDatosPost = [];
+        currentSqlDebug = "";
+    }
+
+    function setFeedback(el, msg, type) {
+        el.textContent = msg;
+        if(type === 'error') el.className = 'form-text text-danger fw-bold';
+        else if(type === 'success') el.className = 'form-text text-success fw-bold';
+        else el.className = 'form-text text-info';
+    }
+
+    /*function showErrorModal(details) {
+        const list = document.getElementById('errorList');
+        list.innerHTML = '';
+        if (Array.isArray(details)) {
+            details.forEach(err => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-danger';
+                li.textContent = err;
+                list.appendChild(li);
+            });
+        } else { list.textContent = details || "Error desconocido"; }
+        myErrorModal.show();
+    }*/
+
+    function showErrorModal(details) {
+        const list = document.getElementById('errorList');
+        list.innerHTML = '';
+        
+        // Variable para almacenar todo el texto que enviaremos al portapapeles
+        let textoError = "";
+
+        if (Array.isArray(details)) {
+            details.forEach(err => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-danger';
+                // 1. Forzamos que el texto sea seleccionable con el mouse
+                li.style.userSelect = 'text'; 
+                li.textContent = err;
+                list.appendChild(li);
+                textoError += err + "\n";
+            });
+        } else { 
+            const msg = details || "Error desconocido";
+            // 1. Forzamos que el texto sea seleccionable con el mouse
+            list.style.userSelect = 'text'; 
+            list.textContent = msg; 
+            textoError = msg;
+        }
+
+        // 2. Creamos y agregamos el botón "Copiar" dinámicamente
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'mt-3 text-center'; // Margen superior y centrado
+        
+        const btnCopiar = document.createElement('button');
+        btnCopiar.className = 'btn btn-secondary btn-sm';
+        btnCopiar.innerHTML = '📋 Copiar Mensaje';
+        
+        // Lógica para copiar al portapapeles
+        btnCopiar.onclick = function() {
+            navigator.clipboard.writeText(textoError.trim()).then(() => {
+                // Feedback visual de éxito
+                const textoOriginal = this.innerHTML;
+                this.innerHTML = '✅ ¡Copiado!';
+                this.classList.replace('btn-secondary', 'btn-success');
+                
+                // Restaurar el botón después de 2 segundos
+                setTimeout(() => {
+                    this.innerHTML = textoOriginal;
+                    this.classList.replace('btn-success', 'btn-secondary');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar al portapapeles: ', err);
+                alert('No se pudo copiar el texto. Seleccionalo manualmente.');
+            });
+        };
+        
+        btnContainer.appendChild(btnCopiar);
+        list.appendChild(btnContainer);
+
+        myErrorModal.show();
+    }
+
+    function mostrarReporteDetallado(reporte) {
+        const lista = document.getElementById('listaReporte');
+        lista.innerHTML = ''; 
+        if(!reporte || reporte.length === 0) {
+            lista.innerHTML = '<div class="p-3 text-center text-muted">No hay detalles.</div>';
+            return;
+        }
+        reporte.forEach(r => {
+            const tipoTexto = mapTipos[r.tipo] || r.tipo || 'N/A';
+            const esError = (r.estado === 'ERROR');
+            const div = document.createElement('div');
+            div.className = `list-group-item report-item ${esError ? 'report-error' : 'report-ok'}`;
+            div.innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 fw-bold">Registro ${r.item || '?'} - <span style="color: #555;">${tipoTexto}</span></h6>
+                    <small class="fw-bold">${esError ? '❌ RECHAZADO' : '✅ VÁLIDO'}</small>
+                </div>
+                <p class="mb-1 small">${r.mensaje || ''}</p>
+            `;
+            lista.appendChild(div);
+        });
+        myReporteModal.show();
+    }
+
+    
+    // =========================================================================
+    //  CONFIGURACIÓN: MATRIZ MADRE (ORDEN ESTRICTO)
+    // =========================================================================
+    // Esta lista define el esqueleto de la tabla. Si un script no trae el dato,
+    // la celda se generará vacía pero la columna mantendrá su posición.
+    const COLUMNAS_MAESTRAS = [
+        { key: 'item', label: 'Item' },
+        { key: 'tipo_modificacion', label: 'Tipo Mod.' },
+        { key: 'id_numeroidentificacion', label: 'ID Identificación' },
+        { key: 'numeroidentificacion', label: 'Cédula / Pasaporte' },
+        { key: 'nombrescompletos', label: 'Nombres Completos' },
+        { key: 'genero', label: 'Género' },
+        { key: 'idpaisnacionalidad', label: 'ID Nacionalidad' },
+        { key: 'id_notas_portal', label: 'ID Nota' },
+        { key: 'notas_portal', label: 'Observación Portal' },
+        { key: 'id_informaciones_academicas', label: 'ID Info Acad.' },
+        { key: 'titulo_id', label: 'ID Título' },
+        { key: 'nombretitulo', label: 'Nombre Título' },
+        { key: 'niveldeformacion', label: 'Nivel Formación' },
+        { key: 'fecha_ingreso_estado', label: 'F. Ingreso Estado' },
+        { key: 'informacionacademicaid', label: 'Info Acad. ID (Ref)' },
+        { key: 'institucionextranjeraid', label: 'ID IES Extranjera' },
+        { key: 'institucionextranjeranombre', label: 'Nombre IES Extranjera' },
+        { key: 'id_portador', label: 'ID Portador' },
+        { key: 'nuevo_numeroidentificacion', label: 'Nueva Cédula' },
+        { key: 'codigo_registro_titulo', label: 'Código Registro' },
+        { key: 'tipodocumento', label: 'Tipo Doc.' },
+        { key: 'id_expediente', label: 'ID Expediente' },
+        { key: 'id_rracine', label: 'ID CINE (Rev)' },
+        { key: 'nombre_nuevo_titulado', label: 'Nuevo Nombre Titulado' },
+        { key: 'id_cine', label: 'ID CINE Final' },
+        { key: 'campo_amplio', label: 'CINE Campo Amplio' },
+        { key: 'campo_especifico', label: 'CINE Campo Específico' },
+        { key: 'campo_detallado', label: 'CINE Campo Detallado' },
+        { key: 'otro', label: 'Área o Campo Conocimiento' }
+    ];
+
+    // =========================================================================
+    //  MOTOR DE RENDERIZADO
+    // =========================================================================
+
+    /**
+     * Renderiza una tabla basada estrictamente en COLUMNAS_MAESTRAS.
+     * @param {Array} data - Array de objetos que viene del servidor.
+     * @param {String} tableId - ID de la tabla HTML (ej: 'tablePre', 'tablePost').
+     */
+    /**
+     * Renderiza una tabla basada estrictamente en COLUMNAS_MAESTRAS.
+     * MODIFICADO: Soporte para Fila Fantasma en tablaPost y atributos para sincronización.
+     */
+    function renderTable(data, tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        // 1. Limpiar tabla
+        table.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            table.innerHTML = '<tr><td class="p-4 text-center text-gray-500">No hay datos para mostrar</td></tr>';
+            return;
+        }
+
+        // 2. Generar Encabezados (THEAD)
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        
+        COLUMNAS_MAESTRAS.forEach((col, index) => {
+            const th = document.createElement('th');
+            th.textContent = col.label;
+            // Nota: Agregamos estilos para asegurar el ancho y altura
+            th.className = "px-4 py-2 border bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider sticky top-0";
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // 3. Generar Cuerpo (TBODY)
+        const tbody = document.createElement('tbody');
+        
+        data.forEach((row, rowIndex) => {
+            const tr = document.createElement('tr');
+            
+            // 1. Detectar Error y Tabla
+            const esError = (row.estado === 'ERROR' || row.ERROR);
+            const esTablaPost = (tableId === 'tablaPost');
+
+            // 2. [RESTAURACIÓN] Lógica de Fila Unificada para Errores
+            // Si es la tabla POST y hay error, creamos una celda gigante con el mensaje
+           if (esError && esTablaPost) {
+                // Paso 1: Limpiamos cualquier clase extraña del TR
+                tr.className = ""; 
+                
+                // Paso 2: Definimos el estilo "hardcore" en una variable
+                // Esto incluye el fondo exacto (#ffeef0) y el color de texto exacto (#b02a37)
+                const estiloNuclear = "background-color: #ffeef0 !important; color: #b02a37 !important;";
+
+                // Paso 3: Aplicamos el estilo al TR y OBLIGATORIAMENTE a cada TD
+                tr.style.cssText = estiloNuclear;
+
+                tr.innerHTML = `
+                    <td class="text-center fw-bold border-bottom align-middle" style="${estiloNuclear}">
+                        ${row.item || '?'}
+                    </td>
+                    <td colspan="100" class="text-center fst-italic border-bottom align-middle" style="height: 55px; ${estiloNuclear}">
+                        ⚠️ ${row.mensaje || row.nombrescompletos || 'Error desconocido'}
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+                return; 
+            }
+
+            // 3. Estilos para filas normales (o tabla PRE con error)
+            if (esError) {
+                tr.className = "bg-error-suave";
+            } else {
+                tr.className = rowIndex % 2 === 0 ? "bg-white" : "bg-light";
+            }
+
+            // (Aquí abajo sigue tu código original: COLUMNAS_MAESTRAS.forEach...)
+            
+
+            // Mapeo de Columnas
+            COLUMNAS_MAESTRAS.forEach((col, colIndex) => {
+                const td = document.createElement('td');
+                
+                // Si es la Tabla Post y es un Error, forzamos contenido vacío o guiones
+                // para mantener la estructura pero no mostrar datos falsos.
+                if (esTablaPost && esError) {
+                    td.textContent = '---'; 
+                    // Opcional: Centrar los guiones
+                    td.style.textAlign = 'center';
+                    td.style.color = '#a1a1a1';
+                } else {
+                    // Lógica normal de pintado de datos
+                    let cellValue = row[col.key]; 
+
+                    // --- INICIO LÓGICA NACIONALIDAD ---
+                    if ((col.key === 'idpaisnacionalidad' || col.key === 'm_nacionalidad') && cellValue) {
+                        // Busca el texto en el mapa. Si el código no existe, muestra el código original.
+                        const textoPais = MAPA_PAISES[String(cellValue)] || "Desconocido"; 
+                        cellValue = `${textoPais} (${cellValue})`;
+                    }
+                    // --- FIN LÓGICA NACIONALIDAD ---
+
+                    if (cellValue === null || cellValue === undefined) cellValue = '';
+                    td.textContent = cellValue;
+                    
+                    // Highlight de columnas clave (solo visual)
+                    if (col.key === 'numeroidentificacion' || col.key === 'item') {
+                        td.style.fontWeight = 'bold';
+                    }
+                }
+
+                td.className = "px-4 py-2 border text-sm text-gray-700 whitespace-nowrap";
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        
+        table.appendChild(tbody);
+
+        // 4. POST-PROCESAMIENTO
+        limpiarColumnasVacias(tableId);
+        if (tableId === 'tablaPost') {
+             activarSincronizacion();
+        }
+
+        hacerColumnasRedimensionables(tableId);
+    }
+
+    /**
+     * Oculta visualmente las columnas que están vacías en todas las filas.
+     */
+    function limpiarColumnasVacias(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const rowCount = table.rows.length;
+    if (rowCount <= 1) return; // Solo encabezados o vacía
+
+    // Aseguramos que COLUMNAS_MAESTRAS esté definido, si no, usamos el header
+    const numCols = table.rows[0].cells.length;
+    
+    // Array para rastrear si una columna tiene datos
+    const colHasData = new Array(numCols).fill(false);
+
+    // 1. DETECTAR DATOS (Ignorando filas de error)
+    for (let i = 1; i < rowCount; i++) {
+        const row = table.rows[i];
+        
+        // --- PROTECCIÓN CRÍTICA 1 ---
+        // Si es una "Fila Fantasma" (clase row-error-placeholder) o tiene menos celdas de las esperadas,
+        // la saltamos para no ensuciar el conteo de datos.
+        if (row.classList.contains('row-error-placeholder') || row.cells.length < numCols) {
+            continue; 
+        }
+        // -----------------------------
+
+        const cells = row.cells;
+        for (let j = 0; j < cells.length; j++) {
+            // Protección extra por si el índice excede
+            if (cells[j] && cells[j].textContent.trim() !== "") {
+                colHasData[j] = true;
+            }
+        }
+    }
+
+    // 2. OCULTAR COLUMNAS VACÍAS
+    const headerCells = table.rows[0].cells;
+    
+    for (let colIndex = 0; colIndex < numCols; colIndex++) {
+        // Solo ocultamos si NO tiene datos
+        if (!colHasData[colIndex]) {
+            
+            // Ocultar Encabezado (si existe)
+            if (headerCells[colIndex]) {
+                headerCells[colIndex].style.display = 'none';
+            }
+            
+            // Ocultar celdas del cuerpo
+            for (let i = 1; i < rowCount; i++) {
+                const row = table.rows[i];
+                const cell = row.cells[colIndex];
+
+                // --- PROTECCIÓN CRÍTICA 2 ---
+                // Solo intentamos ocultar si la celda REALMENTE existe.
+                // Las filas de error no tienen celda[colIndex], así que esto evita el crash.
+                if (cell) {
+                    cell.style.display = 'none';
+                }
+            }
+        }
+    }
+}
+
+
+    // =============================================================================
+    // FUNCIÓN DE ALINEACIÓN ROBUSTA (Basada en Altura de Fila, no en Celdas)
+    // =============================================================================
+    function alinearTablas() {
+        const tPre = document.getElementById('tablaPre');
+        const tPost = document.getElementById('tablaPost');
+
+        // Validación básica de existencia
+        if (!tPre || !tPost) return;
+
+        // Obtenemos los cuerpos de las tablas
+        const bodyPre = tPre.querySelector('tbody');
+        const bodyPost = tPost.querySelector('tbody');
+
+        if (!bodyPre || !bodyPost) return;
+
+        const rowsPre = bodyPre.rows;
+        const rowsPost = bodyPost.rows;
+
+        // Asumimos que la cantidad de filas SIEMPRE es igual 
+        // (porque generamos ambas tablas basándonos en el mismo array de datos)
+        const rowCount = Math.min(rowsPre.length, rowsPost.length);
+
+        requestAnimationFrame(() => {
+            for (let i = 0; i < rowCount; i++) {
+                const trLeft = rowsPre[i];
+                const trRight = rowsPost[i];
+
+                // 1. Reseteamos alturas para obtener la altura natural real
+                // (Esto es necesario por si el contenido cambió o la ventana se redimensionó)
+                trLeft.style.height = 'auto';
+                trRight.style.height = 'auto';
+
+                // 2. Medimos la altura natural de cada lado
+                const hLeft = trLeft.offsetHeight;
+                const hRight = trRight.offsetHeight;
+
+                // 3. Calculamos la máxima y la aplicamos a AMBOS lados
+                // Si la fila derecha es un error (mensaje grande), probablemente sea más alta.
+                // Si la fila izquierda tiene mucho texto, será más alta.
+                // Tomamos la mayor de las dos.
+                const maxHeight = Math.max(hLeft, hRight);
+
+                trLeft.style.height = `${maxHeight}px`;
+                trRight.style.height = `${maxHeight}px`;
+            }
+        });
+    }
+
+
+    // =========================================================================
+    //  FUNCIÓN MEJORADA: SINCRONIZACIÓN DE SCROLL Y HOVER (Por Índice)
+    // =========================================================================
+    function activarSincronizacion() {
+        const divPre = document.getElementById('tablaPre').parentElement; 
+        const divPost = document.getElementById('tablaPost').parentElement; 
+        const rowsPre = document.querySelectorAll('#tablaPre tbody tr');
+        const rowsPost = document.querySelectorAll('#tablaPost tbody tr');
+
+        if (!divPre || !divPost) return;
+
+        // 1. Sincronización de SCROLL (Se mantiene igual, funciona bien)
+        let isSyncingPre = false;
+        let isSyncingPost = false;
+
+        divPre.onscroll = function() {
+            if (!isSyncingPre) {
+                isSyncingPost = true;
+                divPost.scrollTop = this.scrollTop;
+                divPost.scrollLeft = this.scrollLeft;
+            }
+            isSyncingPre = false;
+        };
+
+        divPost.onscroll = function() {
+            if (!isSyncingPost) {
+                isSyncingPre = true;
+                divPre.scrollTop = this.scrollTop;
+                divPre.scrollLeft = this.scrollLeft;
+            }
+            isSyncingPost = false;
+        };
+
+
+        // 2. Sincronización de HOVER (VERSIÓN BLINDADA: Funciona aunque cambien los datos)
+        function syncHover(sourceRows_unused, targetRows_unused) {
+            // Ignoramos las filas que llegan (porque mueren) y usamos las tablas directas por ID
+            const tPre = document.getElementById('tablaPre');
+            const tPost = document.getElementById('tablaPost');
+            
+            // Esta función maneja el evento desde la tabla madre
+            const handleMouse = (e, encender) => {
+                const row = e.target.closest('tr');
+                // Si no es una fila o es el encabezado, no hacemos nada
+                if (!row || row.parentElement.tagName !== 'TBODY') return;
+
+                // 1. Buscamos qué numero de fila es
+                const index = Array.from(row.parentElement.children).indexOf(row);
+                
+                // 2. Buscamos la tabla contraria
+                const targetTable = (row.closest('table').id === 'tablaPre') ? tPost : tPre;
+                const targetBody = targetTable.querySelector('tbody');
+
+                // 3. Pintamos la pareja si existe
+                if (targetBody && targetBody.children[index]) {
+                    const targetRow = targetBody.children[index];
+                    if (encender) {
+                        row.classList.add('hover-sync');
+                        targetRow.classList.add('hover-sync');
+                    } else {
+                        row.classList.remove('hover-sync');
+                        targetRow.classList.remove('hover-sync');
+                    }
+                }
+            };
+
+            // Asignamos el evento UNA SOLA VEZ a las tablas
+            // Usamos onmouseover/onmouseout para evitar duplicados si se llama varias veces
+            [tPre, tPost].forEach(t => {
+                if (t) {
+                    t.onmouseover = (e) => handleMouse(e, true);
+                    t.onmouseout  = (e) => handleMouse(e, false);
+                }
+            });
+        }
+
+
+        // Activamos en ambas direcciones
+        syncHover(rowsPre, rowsPost);
+        syncHover(rowsPost, rowsPre);
+    }
+
+    // Descarga simple del Debug SQL (Cliente)
+        function descargarSqlDebug() {
+            if (!currentSqlDebug) { 
+                alert("No hay información SQL disponible."); 
+                return; 
+            }
+            
+            let contenidoSql = '';
+
+            // 1. Normalizamos el contenido para asegurar que sea un texto SQL válido
+            if (Array.isArray(currentSqlDebug)) {
+                // Si es un arreglo de objetos o cadenas, extraemos el script 'forward' de cada uno
+                contenidoSql = currentSqlDebug
+                    .map(item => {
+                        if (typeof item === 'string') return item;
+                        if (item && item.script && item.script.forward) return item.script.forward;
+                        if (item && item.forward) return item.forward;
+                        return '';
+                    })
+                    .filter(Boolean)
+                    .join('\n\n');
+            } else if (typeof currentSqlDebug === 'object') {
+                contenidoSql = currentSqlDebug.forward || JSON.stringify(currentSqlDebug);
+            } else {
+                contenidoSql = String(currentSqlDebug);
+            }
+
+            if (!contenidoSql.trim()) {
+                alert("El contenido SQL no tiene instrucciones válidas.");
+                return;
+            }
+
+            // 2. Creamos el archivo Blob con codificación UTF-8
+            const blob = new Blob([contenidoSql], { type: 'text/sql;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // 3. Formato de fecha y hora
+            const now = new Date();
+            const fechaHora = now.getFullYear() + '-' + 
+                            String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(now.getDate()).padStart(2, '0') + '_' + 
+                            String(now.getHours()).padStart(2, '0') + '-' + 
+                            String(now.getMinutes()).padStart(2, '0') + '-' + 
+                            String(now.getSeconds()).padStart(2, '0');
+                            
+            // Se guarda explícitamente con extensión .sql
+            a.download = `VISTA_PREVIA_SQL_${fechaHora}.sql`;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+    // =========================================================================
+    //  RECUPERACIÓN LÓGICA BOTÓN "ENTENDIDO" (Cierre de ciclo)
+    // =========================================================================
+    if (btnEntendidoModal) {
+        btnEntendidoModal.addEventListener('click', () => {
+            myReporteModal.hide();
+            
+            // LÓGICA CRÍTICA:
+            // Si los botones de acción (Commit/Rollback) están ocultos ('d-none'),
+            // significa que tuvimos 0 éxitos (según la lógica de btnProcesar). 
+            // En ese caso, forzamos un ROLLBACK para limpiar la transacción 
+            // en el servidor y desbloquear la interfaz automáticamente.
+            if (actionButtons.classList.contains('d-none')) {
+                // Ejecutamos Rollback como si el usuario lo hubiera presionado
+                handleAction('/api/rollback');
+            }
+            // Si NO tienen 'd-none' (hay éxitos), no hacemos nada más que cerrar 
+            // el modal, dejando al usuario los botones disponibles para decidir.
+        });
+
+    }
+
+    // Función para alinear POST con el Reporte (Lógica de Cola/Queue)
+    function normalizarDatosPost(reporte, datosPostRaw) {
+        if (!reporte) return [];
+        
+        // 1. Indexamos los datos en ARRAYS (Listas)
+        //    Si el item 2 viene 3 veces, guardamos los 3 en orden [datoA, datoB, datoC]
+        const mapPost = {};
+        if (datosPostRaw) {
+            datosPostRaw.forEach(d => { 
+                if (d.item) {
+                    if (!mapPost[d.item]) {
+                        mapPost[d.item] = [];
+                    }
+                    mapPost[d.item].push(d); 
+                }
+            });
+        }
+
+        // 2. Recorremos el reporte (que ya tiene las filas correctas)
+        return reporte.map(r => {
+            // Verificamos si hay datos en cola para este item
+            if (mapPost[r.item] && mapPost[r.item].length > 0) {
+                
+                // EXTRAEMOS (shift) el primer dato disponible de la lista.
+                // Esto asegura que la primera fila reciba el primer dato, 
+                // y la segunda fila reciba el segundo dato, etc.
+                const datoCorrespondiente = mapPost[r.item].shift();
+
+                return {
+                    ...r,                // Mantenemos datos base del reporte
+                    ...datoCorrespondiente // Fusionamos con el dato específico de esa posición
+                };
+            } 
+            // Caso B: Se acabaron los datos para este item o hubo error
+            else {
+                return {
+                    ...r,
+                    estado: 'ERROR',     
+                    ERROR: true,         
+                    tipo_modificacion: 'NO PROCESADO', 
+                    nombrescompletos: (r.mensaje || "Error: Datos insuficientes en respuesta") 
+                };
+            }
+        });
+    }
+    
+    // ==========================================
+    //  DISPARADORES DE VALIDACIÓN
+    // ==========================================
+    const memoInput = document.getElementById('inputPdfMemo');
+
+    if (memoInput) {
+        memoInput.addEventListener('blur', () => {
+            if (memoInput.value.trim() !== "") {
+                if (typeof validarTextoMemo === 'function') {
+                    validarTextoMemo();
+                } else {
+                    console.error("Error: La función validarTextoMemo no existe.");
+                }
+            }
+        });
+
+        memoInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                memoInput.blur();
+            }
+        });
+    }
+
+    // ==========================================
+    //  ENLACE DEL BOTÓN FALSO CON EL INPUT OCULTO
+    // ==========================================
+
+    // 1. Al hacer clic en el botón "Seleccione el archivo", abrimos la ventana de Windows/Mac
+    if (btnFakeFile && inputPdfMemo) {
+        btnFakeFile.addEventListener('click', () => {
+            inputPdfMemo.click();
+        });
+    }
+
+    
+    // 2. Cuando el usuario selecciona el PDF
+    if (inputPdfMemo) {
+        inputPdfMemo.addEventListener('change', function() {
+            // Si no hay archivos (cancelar), salimos sin tocar NADA
+            if (!this.files || this.files.length === 0) {
+                return; 
+            }
+
+            // Si hay un archivo nuevo, procedemos
+            let fileName = this.files[0].name;
+            
+            // Limpiamos el Excel porque el PDF es REALMENTE nuevo
+            if (nombreExcelOculto) nombreExcelOculto.value = '';
+            if (fileExcelInput) fileExcelInput.value = '';
+            if (btnProcesar) btnProcesar.disabled = true; 
+
+            // Quitamos la extensión ".pdf"
+            fileName = fileName.replace(/\.[^/.]+$/, ""); 
+            
+            if (nombreMemoOculto) {
+                // Seteamos el valor DIRECTAMENTE sin disparar eventos que limpien
+                nombreMemoOculto.value = fileName;
+                
+                // Si tienes una función de validación de texto (ej: validarTeFscriptxtoMemo), 
+                // llámala directamente en lugar de disparar el evento 'change'
+                if (typeof validarTextoMemo === 'function') {
+                    validarTextoMemo();
+                }
+            }
+        });
+    }
+
+
+    // ---------------------------------------------------------
+    // Mini-vigilante para la caja de texto editable
+    nombreMemoOculto.addEventListener('change', function() {
+        this.value = this.value.toUpperCase().trim(); // Forzar a mayúsculas
+        
+        // Si agregaste "-REPROCESADO", el formato falla a propósito
+        const regex = new RegExp(`^MINEDEC[-_][^\\s-_]+[-_]\\d{4}[-_]\\d{4}[-_]M$`);
+        
+        if (!regex.test(this.value)) {
+            // Al detectar un nombre distinto, lanzamos tu modal amarillo
+            if (!document.querySelector('.modal.show')) {
+                myConfirmacionModal.show();
+            }
+        }
+    });
+    // CIERRE FINAL DEL SCRIPT
+
+    // ==========================================
+    // ACTIVACIÓN LÓGICA DEL BOTÓN EXCEL
+    // ==========================================
+    const btnFakeExcel = document.getElementById('btnFakeExcel');
+    const nombreExcelOculto = document.getElementById('nombreExcelOculto');
+
+    // 1. Hace que el botón "Seleccione el archivo" abra la ventana de búsqueda
+    if (btnFakeExcel && fileExcelInput) {
+        btnFakeExcel.addEventListener('click', () => {
+            fileExcelInput.click();
+        });
+    }
+
+    // 2. Hace que al elegir el archivo, el nombre aparezca en la caja de texto
+    if (fileExcelInput) {
+        fileExcelInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                nombreExcelOculto.value = this.files[0].name;
+            } else {
+                nombreExcelOculto.value = '';
+            }
+        });
+    }
+
+
+    function hacerColumnasRedimensionables(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    // Solo aplicamos a la primera fila (los encabezados)
+    const headers = table.querySelectorAll('thead th, tr:first-child th');
+    
+    headers.forEach(th => {
+        // Evitamos duplicar controladores si la tabla se vuelve a renderizar
+        if (th.querySelector('.resizer')) return;
+
+        const resizer = document.createElement('div');
+        resizer.classList.add('resizer');
+        th.appendChild(resizer);
+
+        crearEventosArrastre(th, resizer);
+    });
+}
+
+function crearEventosArrastre(th, resizer) {
+    let posicionInicialX = 0;
+    let anchoInicial = 0;
+
+    const alMoverRaton = function(e) {
+        // Calculamos cuánto se movió el ratón
+        const diferenciaX = e.clientX - posicionInicialX;
+        // Aplicamos el nuevo ancho a la columna
+        th.style.width = `${anchoInicial + diferenciaX}px`;
+        th.style.minWidth = `${anchoInicial + diferenciaX}px`;
+    };
+
+    const alSoltarRaton = function() {
+        resizer.classList.remove('resizing');
+        document.removeEventListener('mousemove', alMoverRaton);
+        document.removeEventListener('mouseup', alSoltarRaton);
+    };
+
+    resizer.addEventListener('mousedown', function(e) {
+        posicionInicialX = e.clientX;
+        const estilos = window.getComputedStyle(th);
+        anchoInicial = parseInt(estilos.width, 10);
+
+        resizer.classList.add('resizing');
+        document.addEventListener('mousemove', alMoverRaton);
+        document.addEventListener('mouseup', alSoltarRaton);
+    });
+}
+
+// Obtener el indicador de la BD de forma silenciosa
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const respuesta = await fetch('/api/dev-db-status');
+        const datos = await respuesta.json();
+        
+        if (datos.texto) {
+            document.getElementById('devDbInfo').textContent = datos.texto;
+        }
+    } catch (error) {
+        // Si falla (ej. error de red), no hacemos nada para no alertar al usuario
+    }
+});
+
+</script>
 </body>
 </html>

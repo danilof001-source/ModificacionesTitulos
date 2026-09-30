@@ -6,3 +6,191 @@ body, html {
 .bg-light {
     background-color: #f0f2f5 !important;
 }
+
+/* =============================================================
+       1. ESTILOS ORIGINALES (CONSERVADOS)
+       ============================================================= */
+    /* Tu clase original por seguridad (fallback) */
+    .table-container { max-height: 400px; overflow-y: auto; font-size: 0.8rem; }
+
+    .log-box { background: #222; color: #0f0; font-family: monospace; font-size: 0.8rem; height: 250px; }
+    #main-interface { display: none; }
+    .form-label-inline { display: flex; justify-content: space-between; align-items: baseline; }
+    
+    .header-bar { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 10px; 
+        padding-bottom: 15px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    /* Barra de Progreso */
+    .progress-thin-wrapper {
+        height: 18px; 
+        margin-bottom: 20px; 
+        background-color: #e9ecef; 
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-pleasant {
+        background-color: #0dcaf0 !important; 
+    }
+
+    /* Reportes del Modal */
+    .report-item { font-size: 0.9rem; border-left: 5px solid #ccc; margin-bottom: 5px; }
+    .report-ok { border-left-color: #198754; background-color: #DCFCE7; } 
+    .report-error { border-left-color: #dc3545; background-color: #fff8f8; } 
+
+    /* =============================================================
+       2. NUEVOS ESTILOS DE CUADRÍCULA (GRID SYSTEM)
+       ============================================================= */
+    
+    /* Contenedores Específicos para Pre y Post (Reemplazan al genérico en estas dos tablas) */
+    #containerPre, #containerPost {
+        max-height: 65vh;       /* Altura más moderna (65% de la pantalla) */
+        overflow: auto;         /* Scroll en ambas direcciones */
+        border: 1px solid #dee2e6;
+        background-color: #fff;
+    }
+
+    /* REGLA DE HIERRO: ALTURA DE FILAS (Sincronización Vertical) */
+    /* Forzamos que TODAS las filas midan 60px exactos para que cuadren izquierda y derecha */
+    #tablaPre tr, #tablaPost tr {
+        height: 60px !important;
+        max-height: 60px !important;
+        min-height: 60px !important;
+    }
+
+    /* REGLA DE HIERRO: ANCHO DE COLUMNAS (Legibilidad) */
+    /* Forzamos celdas anchas (250px) para que se lea todo */
+    #tablaPre th, #tablaPost th,
+    #tablaPre td, #tablaPost td {
+        min-width: 250px;       
+        max-width: 250px;       
+        
+        white-space: nowrap;    /* No permitir saltos de línea */
+        overflow: hidden;       
+        text-overflow: ellipsis; /* Puntos suspensivos si es muy largo */
+        vertical-align: middle; 
+        padding: 0 10px;        
+        font-size: 0.85rem;
+    }
+
+
+    /* =============================================================
+       3. BLOQUEO DE CABECERAS (Sticky Header)
+       ============================================================= */
+    
+    /* Fijar la cabecera en la parte superior */
+    #tablaPre thead th, #tablaPost thead th {
+        position: sticky;
+        top: 0;
+        z-index: 15; /* Nivel intermedio: Arriba del contenido, abajo de la esquina */
+        
+        /* Estética para que no se vea transparente al bajar */
+        background-color: #212529 !important; /* Color oscuro (table-dark) forzado */
+        color: white;
+        box-shadow: 0 2px 2px rgba(0,0,0,0.2); /* Sombrita para dar profundidad */
+        border-bottom: 1px solid #444;
+    }
+
+    /* CORRECCIÓN CRÍTICA: La esquina superior izquierda (Intersección) */
+    /* Esta celda es la más importante, debe estar encima de TODO (Cabecera y Columna Izq) */
+    #tablaPre thead th:first-child, 
+    #tablaPost thead th:first-child {
+        z-index: 30 !important;       /* El nivel más alto (mayor que 15 y 10) */
+        background-color: #212529;    /* Asegura que sea del color de la cabecera */
+        left: 0;                      /* Asegura que se pegue a la izquierda */
+        outline: 1px solid #555;      /* Borde extra para definir la esquina */
+    }
+
+    
+
+    /* COLUMNA FIJA (Sticky ID) - Para que el ID no desaparezca al hacer scroll */
+    #tablaPre th:first-child, #tablaPost th:first-child,
+    #tablaPre td:first-child, #tablaPost td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        background-color: #f8f9fa; 
+        border-right: 2px solid #ccc;
+        
+        /* El ID es más angosto */
+        min-width: 70px;
+        max-width: 70px;
+        text-align: center;
+        font-weight: bold;
+    }
+    
+    /* Corrección Z-Index para el encabezado de la columna fija */
+    #tablaPre thead th:first-child, #tablaPost thead th:first-child {
+        z-index: 20; 
+    }
+
+    /* --- ESTADOS VISUALES --- */
+    
+    /* Hover Sincronizado (Amarillo) */
+   .hover-sync, 
+    .hover-sync > td {
+        background-color: #aecbe0 !important; /* Azul hielo suave */
+        transition: background-color 0.15s ease;
+        cursor: default;
+    }
+
+
+    /* ESTILO 2: (NUEVO) El rosa suave para los errores */
+    .bg-error-suave, 
+    .bg-error-suave > td {
+        background-color: #ffeef0 !important; /* Rosa muy pálido */
+        color: #b02a37 !important; /* Rojo oscuro */
+    }
+
+    /* Fila Fantasma (La que está vacía por error) */
+    .row-error-placeholder td {
+        background-color: #fff5f5 !important; 
+        color: #adb5bd; /* Guiones grises */
+        font-weight: bold;
+        text-align: center;
+        letter-spacing: 3px;
+    }
+    
+    /* Fila de Error Real (Lado Izquierdo) */
+    .bg-red-50 {
+        background-color: #fee2e2 !important;
+    }
+
+    th {
+    position: relative; /* Obligatorio para que el controlador se posicione bien */
+}
+
+.resizer {
+    width: 6px;
+    height: 100%;
+    position: absolute;
+    right: 0;
+    top: 0;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 1;
+}
+
+/* Opcional: que se pinte de azul al pasar el ratón para que el usuario sepa que puede arrastrar */
+.resizer:hover, .resizer.resizing {
+    background-color: #0d6efd; 
+}
+
+
+/* Etiqueta para desarrolladores */
+.dev-db-info {
+    position: fixed;
+    bottom: 5px;
+    left: 5px;
+    font-size: 10pt;
+    color: rgba(0,0,0,0.8); /* Blanco casi transparente, ajusta a negro rgba(0,0,0,0.3) si tu fondo es claro */
+    z-index: 1000;
+    pointer-events: none; /* Evita que el texto interfiera si alguien hace clic ahí */
+    font-family: monospace;
+}

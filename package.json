@@ -11,11 +11,26 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "archiver": "^7.0.1",
+    "bcrypt": "^6.0.0",
     "body-parser": "^2.2.1",
+    "docx": "^9.5.1",
     "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "multer": "^2.0.2",
-    "pg": "^8.16.3"
-  }
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.16.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danilof001-source/ModificacionesTitulos.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/danilof001-source/ModificacionesTitulos/issues"
+  },
+  "homepage": "https://github.com/danilof001-source/ModificacionesTitulos#readme"
 }

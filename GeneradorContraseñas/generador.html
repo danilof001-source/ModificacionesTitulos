@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Contraseñas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .ventana-flotante {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 350px;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .grupo-input {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .resultado-caja {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+            resize: none;
+            background-color: #e9ecef;
+            word-break: break-all;
+        }
+        #mensaje {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            height: 20px;
+        }
+        .error { color: #dc3545; }
+        .exito { color: #28a745; }
+    </style>
+</head>
+<body>
+
+    <div class="ventana-flotante">
+        <h2>Generador de Contraseñas</h2>
+        
+        <div class="grupo-input">
+            <label for="pass1">Contraseña:</label>
+            <input type="password" id="pass1" placeholder="Ingrese contraseña">
+        </div>
+        
+        <div class="grupo-input">
+            <label for="pass2">Confirmar Contraseña:</label>
+            <input type="password" id="pass2" placeholder="Repita la contraseña">
+        </div>
+        
+        <button onclick="generarHash()">Generar Hash Seguro</button>
+        
+        <div id="mensaje"></div>
+
+        <div class="resultado-caja">
+            <label for="hashOutput">Hash generado (solo lectura):</label>
+            <textarea id="hashOutput" readonly placeholder="El hash aparecerá aquí..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        function generarHash() {
+            const pass1 = document.getElementById('pass1').value;
+            const pass2 = document.getElementById('pass2').value;
+            const mensajeDiv = document.getElementById('mensaje');
+            const hashOutput = document.getElementById('hashOutput');
+
+            // Limpiamos mensajes anteriores
+            mensajeDiv.textContent = '';
+            mensajeDiv.className = '';
+            hashOutput.value = '';
+
+            // Validaciones
+            if (!pass1 || !pass2) {
+                mensajeDiv.textContent = 'Por favor, llene ambos campos.';
+                mensajeDiv.className = 'error';
+                return;
+            }
+
+            if (pass1 !== pass2) {
+                mensajeDiv.textContent = 'Las contraseñas no coinciden.';
+                mensajeDiv.className = 'error';
+                return;
+            }
+
+            // Generación del Hash usando bcryptjs
+            try {
+                // 10 es el número estándar de rondas (salt)
+                const salt = dcodeIO.bcrypt.genSaltSync(10); 
+                const hash = dcodeIO.bcrypt.hashSync(pass1, salt);
+                
+                hashOutput.value = hash;
+                mensajeDiv.textContent = '¡Hash generado con éxito!';
+                mensajeDiv.className = 'exito';
+                
+                // Opcional: Seleccionar el texto automáticamente para que sea más fácil copiarlo
+                hashOutput.select();
+                
+            } catch (error) {
+                mensajeDiv.textContent = 'Ocurrió un error al generar el hash.';
+                mensajeDiv.className = 'error';
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

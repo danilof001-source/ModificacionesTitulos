@@ -29,7 +29,7 @@ function obtenerIdPaisPorNombre(nombrePais) {
 const ESTRUCTURA_ESPERADA = [
   "No",
   "TIPO_MODIFICACION",
-  "MODIFICACION", //antes MEMORANDO
+  "MEMORANDO",
   "CEDULA_O_PASAPORTE_SEGUN_REGISTRO",
   "TIPO_IDENTIFICACION",
   "NOMBRES",
@@ -61,35 +61,19 @@ const ESTRUCTURA_ESPERADA = [
 ]
 
 const REGLAS_VALIDACION = {
-    'IOBS': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','MODIFICACION'],
-    'MOBS': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','OBSERVACION','MODIFICACION'],
-    'AOBS': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','OBSERVACION','MODIFICACION'],
+    'IOBS': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','M_OBSERVACION'],
+    'MOBS': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','OBSERVACION','M_OBSERVACION'],
+    'AOBS': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','OBSERVACION','M_OBSERVACION'],
     'EOBS': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION'],
-    'CNOM': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TIPO_MODIFICACION','MODIFICACION'], 
-    'CTIT': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','MODIFICACION'],
-    'CIES': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','MODIFICACION'],
-    'CNIV': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','NIVEL_FORMACION','MODIFICACION'],
+    'CNOM': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TIPO_MODIFICACION','M_NOMBRES'], 
+    'CTIT': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','TITULO_REGISTRADO_SNIESE','M_TITULO_REGISTRADO_SNIESE'],
+    'CIES': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION',"M_IES_QUE_SOLICITA_CAMBIO"],
+    'CNIV': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','NOMBRE_IES','NUMERO_REGISTRO','TIPO_MODIFICACION','NIVEL_FORMACION','M_NIVEL_FORMACION'],
     'CIDE': ['No','NOMBRES','TIPO_MODIFICACION','TIPO_IDENTIFICACION','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','M_TIPO_IDENTIFICACION','M_CEDULA_O_PASAPORTE_SEGUN_REGISTRO'],
-    'CGEN': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','TIPO_MODIFICACION','MODIFICACION'],
-    'CNAC': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TIPO_MODIFICACION','NACIONALIDAD','MODIFICACION'],
-    'CCON': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','NUMERO_REGISTRO','FECHA_REGISTRO','MODIFICACION']
+    'CGEN': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TITULO_REGISTRADO_SNIESE','TIPO_MODIFICACION','M_GENERO'],
+    'CNAC': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','TIPO_MODIFICACION','NACIONALIDAD','M_NACIONALIDAD'],
+    'CCON': ['No','CEDULA_O_PASAPORTE_SEGUN_REGISTRO','NOMBRES','NUMERO_REGISTRO','FECHA_REGISTRO','M_AREA_O_CAMPO_CONOCIMIENTO']
 };
-
-// Mapa que asocia cada TIPO_MODIFICACION con la propiedad correspondiente del objeto 'map'
-const MAPA_CAMPOS_EXCEL_DESTINO = {
-    'CNOM': 'M_NOMBRES',
-    'CTIT': 'M_TITULO_REGISTRADO_SNIESE',
-    'CIES': 'M_IES_QUE_SOLICITA_CAMBIO',
-    'CNIV': 'M_NIVEL_FORMACION',
-    'CGEN': 'M_GENERO',
-    'CNAC': 'M_NACIONALIDAD',
-    'CCON': 'M_AREA_O_CAMPO_CONOCIMIENTO',
-    'IOBS': 'M_OBSERVACION',
-    'MOBS': 'M_OBSERVACION',
-    'AOBS': 'M_OBSERVACION'
-    // CIDE y EOBS no están aquí porque CIDE se omite y EOBS no requiere copia
-};
-    
 
 // ==========================================
 // LÓGICA PRINCIPAL
@@ -118,7 +102,7 @@ async function procesarArchivoExcel(filePath) {
     const map = {
         no: getCol("No"),
         tipo: getCol("TIPO_MODIFICACION"),
-        modificacion: getCol("MODIFICACION"),
+        memorando: getCol("MEMORANDO"),
         cedula: getCol("CEDULA_O_PASAPORTE_SEGUN_REGISTRO"),
         tipo_identificacion: getCol("TIPO_IDENTIFICACION"),
         nombres: getCol("NOMBRES"),
@@ -159,100 +143,15 @@ async function procesarArchivoExcel(filePath) {
     // ELIMINADO: Arrays de IDs masivos (idsParaConsultaPre, idsParaConsultaPost)
     const erroresValidacion = [];
     
-// --- MAPA PARA TRADUCIR NÚMEROS ANTIGUOS A CÓDIGOS NUEVOS ---
+    let memorandoGlobal = "";
+    let contadorSecuencialEsperado = 1;
+
+    // --- MAPA PARA TRADUCIR NÚMEROS ANTIGUOS A CÓDIGOS NUEVOS ---
     const MAPA_LEGACY = {
         '1': 'IOBS', '2': 'MOBS', '3': 'AOBS', '4': 'EOBS', '5': 'CNOM',
         '6': 'CTIT', '7': 'CIES', '8': 'CNIV', '9': 'CIDE', '10': 'CGEN',
         '11': 'CCON', '12': 'CNAC'
     };
-
-// --- PRE-PROCESAMIENTO: Copia de MODIFICACION hacia su campo M_ respectivo ---
-    let huboCambios = false;
-
-    worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return; // Omitir fila de encabezados
-
-        // 1. Obtener tipo de modificación y traducir si viene como número antiguo
-        let tipoModRaw = row.getCell(map.tipo).value;
-        if (typeof tipoModRaw === 'object' && tipoModRaw !== null) {
-            tipoModRaw = tipoModRaw.text || tipoModRaw.result;
-        }
-        let tipoMod = tipoModRaw ? tipoModRaw.toString().trim().toUpperCase() : "";
-        if (MAPA_LEGACY[tipoMod]) {
-            tipoMod = MAPA_LEGACY[tipoMod];
-        }
-
-        // 2. Si es tipo CIDE o no requiere copia (como EOBS), omitir completamente
-        const nombreColDestino = MAPA_CAMPOS_EXCEL_DESTINO[tipoMod];
-        if (!nombreColDestino) return;
-
-        // 3. Leer valor del campo MODIFICACION
-        const cellMod = row.getCell(map.modificacion);
-        let valMod = cellMod.value;
-        if (valMod !== null && valMod !== undefined) {
-            valMod = (typeof valMod === 'object') ? (valMod.text || valMod.result || cellMod.text || "") : valMod.toString();
-        } else {
-            valMod = cellMod.text || "";
-        }
-        valMod = valMod ? valMod.toString().trim() : "";
-
-        // 4. Copiar valor hacia la celda destino de la matriz
-        if (valMod !== "") {
-            const colDestinoIdx = getCol(nombreColDestino);
-            if (colDestinoIdx !== -1) {
-                row.getCell(colDestinoIdx).value = valMod;
-                row.commit();
-                huboCambios = true;
-                console.log(`✅ Copiado '${valMod}' en columna ${nombreColDestino} (Índice ${colDestinoIdx})`);
-            } else {
-                console.log(`❌ ERROR: No se encontró la columna '${nombreColDestino}' en la cabecera del Excel`);
-            }
-            
-        }
-    });
-
-    // 5. Guardar la matriz modificada físicamente en el archivo
-    if (huboCambios) {
-        console.log("💾 Cambios detectados. Guardando en el archivo físico...");
-
-        // 🛠️ DESACTIVACIÓN TOTAL DE FORMATOS CONDICIONALES EN EXCELJS
-        const hojas = [
-            ...(workbook.worksheets || []),
-            ...(workbook._worksheets || [])
-        ].filter(Boolean);
-
-        hojas.forEach(sheet => {
-            // 1. Vaciar arreglo privado interno
-            sheet._conditionalFormatting = [];
-
-            // 2. Vaciar el modelo en memoria que utiliza writeFile()
-            if (sheet.model) {
-                sheet.model.conditionalFormatting = [];
-            }
-
-            // 3. Bloquear el getter para que siempre retorne un arreglo vacío
-            try {
-                Object.defineProperty(sheet, 'conditionalFormatting', {
-                    get: () => [],
-                    set: () => {},
-                    configurable: true
-                });
-            } catch (e) {
-                // Ignorar si la propiedad no permite redefinición
-            }
-        });
-
-        await workbook.xlsx.writeFile(filePath);
-        console.log("✅ ¡ÉXITO! El archivo Excel fue reescrito y guardado en disco.");
-    } else {
-        console.log("⚠️ ATENCIÓN: 'huboCambios' está en FALSE. El servidor no guardó nada en el Excel porque no encontró celdas a modificar o la columna destino 'M_' no coincidió.");
-    }
-
-    
-    let memorandoGlobal = "";
-    let contadorSecuencialEsperado = 1;
-
-    
 
     // --- ITERACIÓN Y VALIDACIÓN ---
     worksheet.eachRow((row, rowNumber) => {
@@ -384,7 +283,7 @@ async function procesarArchivoExcel(filePath) {
         const item = {
             no: row.getCell(map.no).value,
             tipoModificacion: tipoMod,
-            modificacion: getData(map.modificacion), //antes ---> memorando: getData(map.memorando),
+            memorando: getData(map.memorando),
             cedula: getData(map.cedula),
             tipo_identificacion: finalTipoIdentificacion,
             nombres: getData(map.nombres),
@@ -417,7 +316,7 @@ async function procesarArchivoExcel(filePath) {
             idBusqueda: idBusqueda
         };
 
-        // ya no se usa ---> if (!memorandoGlobal && item.memorando) memorandoGlobal = item.memorando;
+        if (!memorandoGlobal && item.memorando) memorandoGlobal = item.memorando;
         datosExcel.push(item);
         
         // ELIMINADO: Bloque que empujaba IDs a arrays masivos (idsParaConsultaPre.push...)

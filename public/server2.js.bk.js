@@ -14,29 +14,17 @@ const fs = require('fs');
 const archiver = require('archiver');
 const { generarReporteDocx } = require('./src/generadorWord');
 const bcrypt = require('bcrypt');
-const { extraerAsunto } = require('./src/extractorPdf');
-const { generarSqlResultados } = require('./src/generadorSql');
-
 
 // Configuración de Tipos de PG (BIGINT a String)
 types.setTypeParser(20, val => val.toString());
 
 // Importaciones Locales
-require('dotenv').config();
-
-/// --- DETERMINACIÓN DINÁMICA DEL ESQUEMA ---
-const dbHost = process.env.DB_HOST;
-let ESQUEMA = 'servicio_titulos'; // Valor por defecto seguro
-
-if (dbHost === '10.180.2.3' || dbHost === '127.0.0.1') {
-    ESQUEMA = 'servicio_titulos_consulta';
-} else if (dbHost === '10.181.1.125') {
-    ESQUEMA = 'servicio_titulos';
-}
 const db = require('./src/db'); 
 const procesador = require('./src/procesador'); 
 const diccionario = require('./src/diccionarioScripts');
 const { generarExcelResultados } = require('./src/generadorExcel');
+require('dotenv').config();
+
 const app = express();
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
@@ -54,22 +42,21 @@ if (!fs.existsSync(RESULTADOS_DIR)) {
 // Exponemos esta carpeta públicamente para permitir la descarga
 app.use('/descargas', express.static(RESULTADOS_DIR));
 
-// LISTA DE TABLAS CRÍTICAS PARA GESTIÓN DE TRIGGERS (en caso de que ESQUEMA sea 10.180.2.3)
+// LISTA DE TABLAS CRÍTICAS
 const TABLAS_CRITICAS = [
-    `${ESQUEMA}.identificaciones`,
-    `${ESQUEMA}.informaciones_academicas`,
-    `${ESQUEMA}.expedientes`,
-    `${ESQUEMA}.informaciones_academicas_regulares`,
-    `${ESQUEMA}.portadores_titulo`,
-    `${ESQUEMA}.resultados_revision`,
-    `${ESQUEMA}.titulos_academicos`,
-    `${ESQUEMA}.resultados_revision_analista_clasificaciones_cine`
+    'servicio_titulos.identificaciones',
+    'servicio_titulos.informaciones_academicas',
+    'servicio_titulos.expedientes',
+    'servicio_titulos.informaciones_academicas_regulares',
+    'servicio_titulos.portadores_titulo',
+    'servicio_titulos.resultados_revision',
+    'servicio_titulos.titulos_academicos',
+    'servicio_titulos.resultados_revision_analista_clasificaciones_cine'
 ];
 
 // GESTIÓN DE TRANSACCIONES Y MEMORIA
 const activeTransactions = new Map();
 
-// Función auxiliar para limpiar transacciones expiradas (Timeout)
 const cleanupTransaction = (txId) => {
     if (activeTransactions.has(txId)) {
         const { client, timeout, logId } = activeTransactions.get(txId);
@@ -85,28 +72,14 @@ const cleanupTransaction = (txId) => {
     }
 };
 
-// Función para desactivar/activar triggers en tablas críticas
-async function gestionarTriggers(client, accion) {
-    // 1. Verificamos si la variable ESQUEMA es distinta de 'servicio_titulos_consulta'
-    // (Ajusta "process.env.ESQUEMA" si tu variable viene de un archivo .env, 
-    // o simplemente usa la constante ESQUEMA si la declaraste globalmente arriba).
-    const esquemaActual = process.env.ESQUEMA || ESQUEMA; 
-
-    if (esquemaActual !== 'servicio_titulos_consulta') {
-        // Opcional: Puedes dejar este console.log para depurar, o borrarlo si hace mucho ruido
-        console.log(`Saltando gestión de triggers: El esquema actual (${esquemaActual}) no requiere esta acción.`);
-        return; // Retornamos anticipadamente; el código de abajo no se ejecutará.
-    }
-    // 2. Si pasó la validación, ejecuta la lógica normal
+/*async function gestionarTriggers(client, accion) {
     const estado = accion === 'DISABLE' ? 'DISABLE' : 'ENABLE';
     for (const t of TABLAS_CRITICAS) {
         try { 
             await client.query(`ALTER TABLE ${t} ${estado} TRIGGER ALL`); 
-        } catch(e) {
-            console.error(`Error gestionando triggers en ${t}:`, e.message);
-        }
+        } catch(e) { console.error(`Error triggers ${t}:`, e.message); }
     }
-}
+}*/
 
 // -----------------------------------------------------------------------------
 // ENDPOINTS DE VALIDACIÓN
@@ -141,10 +114,6 @@ app.post('/api/check-excel', upload.single('archivoExcel'), async (req, res) => 
         await procesador.procesarArchivoExcel(filePath);
         res.json({ valid: true, message: "Estructura válida." });
     } catch (error) {
-        console.error("\n=======================================================");
-        console.error("💥 ERROR DETECTADO EN CHECK-EXCEL:");
-        console.error(error.stack);
-        console.error("=======================================================\n");
         if (error.validationErrors) return res.json({ valid: false, message: "Errores en matriz", details: error.validationErrors });
         res.json({ valid: false, message: error.message });
     } finally {
@@ -190,24 +159,10 @@ app.post('/api/login', async (req, res) => {
             // El usuario no existe
             res.status(401).json({ success: false, message: 'Credenciales incorrectas.' });
         }
-
-        } catch (err) { 
-        console.error('Error en el login:', err);
-        
-        // Captura el stack trace completo, o el mensaje, o serializa el error si es un objeto anómalo
-        const detalleError = err.stack || err.message || JSON.stringify(err, Object.getOwnPropertyNames(err));
-        
-        res.json({ 
-            success: false, 
-            message: `DETALLE TÉCNICO: ${detalleError}` 
-        }); 
-        }
-
-
-   /* } catch (err) { 
+    } catch (err) { 
         console.error('Error en el login:', err); // Te agregué esto para que sea más fácil depurar si falla
         res.json({ success: false, message: 'Error BD' }); 
-    }*/
+    }
 });
 /*app.post('/api/login', async (req, res) => {
     const { usuario, password } = req.body;
@@ -227,25 +182,9 @@ app.post('/api/login', async (req, res) => {
 // -----------------------------------------------------------------------------
 // PROCESAMIENTO CORE (/api/upload-matriz)
 // -----------------------------------------------------------------------------
-app.post('/api/upload-matriz', upload.fields([
-    { name: 'archivoExcel', maxCount: 1 }, 
-    { name: 'archivoPdf', maxCount: 1 }
-]), async (req, res) => {
+app.post('/api/upload-matriz', upload.single('archivoExcel'), async (req, res) => {
     let client = null;
-    
-    // Capturamos las rutas de ambos archivos temporales
-    let filePath = req.files && req.files['archivoExcel'] ? req.files['archivoExcel'][0].path : null;
-    let pdfPath = req.files && req.files['archivoPdf'] ? req.files['archivoPdf'][0].path : null;
-    
-    // --- EXTRAER ASUNTO DEL PDF ---
-    let asuntoExtraido = "Asunto no especificado";
-    if (pdfPath) {
-        asuntoExtraido = await extraerAsunto(pdfPath);
-        console.log(">>> Asunto extraído:", asuntoExtraido); // Para que lo veas en consola
-        // Destruimos el PDF inmediatamente para ahorrar espacio en el servidor
-        if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath); 
-    }
-    // -------------------------------------
+    let filePath = req.file ? req.file.path : null;
     
     // Recibimos los nombres corregidos desde el Frontend
     const { userId, ipOrigen, fechaIngresoSession, nombreMemo } = req.body;
@@ -285,9 +224,7 @@ app.post('/api/upload-matriz', upload.fields([
         // 2. Procesar Excel
         const fase1 = await procesador.procesarArchivoExcel(filePath);
         const fileBuffer = fs.readFileSync(filePath);
-        //const originalName = req.file.originalname; <--- codigo cuando solo se cargaba el excel, ahora se carga también un pdf
-        const originalName = req.files['archivoExcel'][0].originalname;
-
+        const originalName = req.file.originalname;
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath); 
 
         // 3. Transaccion DB
@@ -299,9 +236,7 @@ app.post('/api/upload-matriz', upload.fields([
         let logSqlReverse = "";
         let logSqlSelects = "";     // Acumulador Verificaciones
         let logSqlAgrupado = "";
-        let scriptsAgrupadosPorTipo = {};
-        let preConsultasAgrupadasPorTipo = {}; // <--- AQUÍ SE GUARDARÁ EL BLOQUE .TMP POR TIPO
-        let postConsultasAgrupadasPorTipo = {}; // <--- VARIABLE PARA LA PARTE 5
+
         const reporteDetallado = []; 
         const accumulatedPreData = [];  
         const accumulatedPostData = []; 
@@ -309,11 +244,10 @@ app.post('/api/upload-matriz', upload.fields([
         const resultadosFinales = [];
 
         try {
-            // Desactivar triggers temporalmente
-            await gestionarTriggers(client, 'DISABLE');
-
+            //await gestionarTriggers(client, 'DISABLE');
+            
             // =================================================================
-            // LÓGICA BLINDADA Y SEPARADA
+            // BLOQUE FOR CORREGIDO - LÓGICA BLINDADA Y SEPARADA
             // =================================================================
             for (const itemXls of fase1.datosExcel) {
                 console.log(`>>> Procesando Item ${itemXls.no} - ${itemXls.cedula}`);
@@ -381,56 +315,13 @@ app.post('/api/upload-matriz', upload.fields([
                         paramsValues = `('${itemXls.cedula}', '${codigoLimpio}', ${itemXls.no})`;
                     }
 
-
                     // 3. Ejecución Consulta PRE
                     const sqlPre = scriptTemplate.replace(/<<REEMPLAZAR_VALORES>>|<valores>/g, paramsValues);
                     const resPre = await client.query(sqlPre);
 
-                    const tipoPre = itemXls.tipoModificacion || 'SIN_TIPO';
-                    if (!preConsultasAgrupadasPorTipo[tipoPre]) {
-                        preConsultasAgrupadasPorTipo[tipoPre] = "";
-                    }
-
-                    // 3.1. Construimos el listado continuo con moldes fijos para evitar descuadres
-                    if (resPre.rows.length > 0) {
-                        const columnas = Object.keys(resPre.rows[0]);
-                        let reporteDatos = "";
-
-                        // Definimos los anchos constantes que usarán TODAS las filas del bucle
-                        const anchos = {};
-                        columnas.forEach(col => {
-                            const colLower = col.toLowerCase();
-                            // Campos de texto de tu base de datos que sabemos que son muy largos
-                            if (['nombrescompletos', 'nombretitulo', 'fecha_ingreso_estado', 'notas_portal', 'otro'].includes(colLower)) {
-                                anchos[col] = 60;
-                            } else {
-                                // Para IDs, códigos o campos cortos usamos un estándar de 22 (o el largo del nombre de la columna)
-                                anchos[col] = Math.max(col.length, 22);
-                            }
-                        });
-
-                        // Dibujamos las cabeceras UNA SOLA VEZ (cuando el archivo está vacío para este tipo)
-                        if (preConsultasAgrupadasPorTipo[tipoPre] === "") {
-                            const cabecera = columnas.map(col => col.padEnd(anchos[col])).join(' | ');
-                            const separador = columnas.map(col => '-'.repeat(anchos[col])).join('-+-');
-                            reporteDatos += cabecera + '\n' + separador + '\n';
-                        }
-
-                        // Dibujamos las filas de datos aplicando ESTRICTAMENTE el mismo patrón de ancho
-                        resPre.rows.forEach(fila => {
-                            const linea = columnas.map(col => {
-                                const valor = fila[col] !== null && fila[col] !== undefined ? String(fila[col]) : 'NULL';
-                                return valor.padEnd(anchos[col]); 
-                            }).join(' | ');
-                            reporteDatos += linea + '\n';
-                        });
-
-                        // Apilamos el bloque de texto al acumulador global
-                        preConsultasAgrupadasPorTipo[tipoPre] += reporteDatos;
-                    }
-
+                    // Si no hay filas, forzamos un array con un null para reportar el "No Encontrado"
                     const filasEncontradas = resPre.rows.length > 0 ? resPre.rows : [null];
-                    let postProcesado = false; // <--- SOLUCIÓN: Bandera para evitar que el POST se imprima doble
+
                     // 4. Iteración (Manejo de resultados)
                     for (const bdRowItem of filasEncontradas) {
                         
@@ -510,7 +401,6 @@ app.post('/api/upload-matriz', upload.fields([
 
                         } else {
                             // 1. Preparar y Ejecutar la consulta POST
-                            
                             let paramsPost = paramsValues;
                             if (itemXls.tipoModificacion === 'CIDE') {
                                 paramsPost = `('${itemXls.m_cedula || itemXls.cedula}', ${itemXls.no})`;
@@ -518,50 +408,6 @@ app.post('/api/upload-matriz', upload.fields([
                             const sqlPost = scriptTemplate.replace(/<<REEMPLAZAR_VALORES>>|<valores>/g, paramsPost);
                             const resPost = await client.query(sqlPost); // <--- ESTO ARREGLA EL ERROR DE "INITIALIZATION"
 
-                            // ============================================================
-                            // RECOLECCIÓN DE DATOS PARA LA PARTE 5 (VERIFICACIÓN POST)
-                            // ============================================================
-                            if (!postProcesado) {
-                                const tipoPost = itemXls.tipoModificacion || 'SIN_TIPO';
-                                if (!postConsultasAgrupadasPorTipo[tipoPost]) {
-                                    postConsultasAgrupadasPorTipo[tipoPost] = "";
-                                }
-
-                                if (resPost.rows.length > 0) {
-                                    const columnasPost = Object.keys(resPost.rows[0]);
-                                    let reporteDatosPost = "";
-                                    const anchosPost = {};
-                                    
-                                    columnasPost.forEach(col => {
-                                        const colLower = col.toLowerCase();
-                                        if (['nombrescompletos', 'nombretitulo', 'fecha_ingreso_estado', 'notas_portal', 'otro'].includes(colLower)) {
-                                            anchosPost[col] = 60;
-                                        } else {
-                                            anchosPost[col] = Math.max(col.length, 22);
-                                        }
-                                    });
-
-                                    if (postConsultasAgrupadasPorTipo[tipoPost] === "") {
-                                        const cabeceraPost = columnasPost.map(col => col.padEnd(anchosPost[col])).join(' | ');
-                                        const separadorPost = columnasPost.map(col => '-'.repeat(anchosPost[col])).join('-+-');
-                                        reporteDatosPost += cabeceraPost + '\n' + separadorPost + '\n';
-                                    }
-
-                                    resPost.rows.forEach(fila => {
-                                        const linea = columnasPost.map(col => {
-                                            const valor = fila[col] !== null && fila[col] !== undefined ? String(fila[col]) : 'NULL';
-                                            return valor.padEnd(anchosPost[col]); 
-                                        }).join(' | ');
-                                        reporteDatosPost += linea + '\n';
-                                    });
-
-                                    postConsultasAgrupadasPorTipo[tipoPost] += reporteDatosPost;
-                                    // ======= PASO 3: CIERRA LA BANDERA ======= 
-                                }
-                                postProcesado = true; // <--- Bloquea para que no vuelva a repetir el texto en la siguiente iteración
-                            }
-                            // ============================================================
-                                                        
                             // ============================================================
                             // INICIO BLOQUE LOGS DEPURACIÓN (SUPER DETALLADO)
                             // ============================================================
@@ -594,14 +440,12 @@ app.post('/api/upload-matriz', upload.fields([
                                 console.log(`3. MATCH: FALLIDO. No se encontró el ID ${idOriginal} en el array POST.`);
                                 console.log(`   ACCION: Se usará la fila [0] como fallback (causa de duplicados).`);
                                 
-                                // FALLBACK SEGURO: Evita el crash si resPost o resPost.rows vienen como undefined
-                                if (resPost && Array.isArray(resPost.rows) && resPost.rows.length > 0) {
+                                // FALLBACK: Si no hay match, toma el primero (AQUÍ ES DONDE SE DUPLICAN LOS DATOS SI FALLA EL ID)
+                                if (resPost.rows.length > 0) {
                                     rowMatch = resPost.rows[0]; 
                                     for (const key in rowMatch) {
                                         if (rowMatch[key] !== null) itemPost[key] = String(rowMatch[key]);
                                     }
-                                } else {
-                                    console.log(`⚠️ [DEBUG ITEM ${itemXls.no}] resPost.rows no existe o llegó vacío (0 filas).`);
                                 }
                                 itemPost.ESTADO_FINAL = "POSIBLE DUPLICADO (ID NO COINCIDE)";
                             }
@@ -613,12 +457,7 @@ app.post('/api/upload-matriz', upload.fields([
                             itemPost.cine_campo_conocimiento = itemXls.m_conocimiento;
                         }
 
-                        // Agrupar scripts por tipo
-                        const tipoMod = itemXls.tipoModificacion || 'SIN_TIPO';
-                        if (!scriptsAgrupadosPorTipo[tipoMod]) {
-                            scriptsAgrupadosPorTipo[tipoMod] = "";
-                        }
-                        scriptsAgrupadosPorTipo[tipoMod] += `-- Item ${itemXls.no}:\n${scriptGenerado}\n`;
+                        logSqlUpdates += `-- Item ${itemXls.no} (${itemXls.tipoModificacion}):\n${scriptGenerado}\n`;
 
                         // PUSH A RESULTADOS
                         accumulatedPreData.push(itemPre);
@@ -685,17 +524,10 @@ app.post('/api/upload-matriz', upload.fields([
                 }
             }
             // =================================================================
-            // Armar el SQL final agrupado con separadores
-            for (const tipo in scriptsAgrupadosPorTipo) {
-                logSqlUpdates += `\n---------------------------------------------\n`;
-                logSqlUpdates += `-- TIPO DE MODIFICACIÓN: ${tipo}\n`;
-                logSqlUpdates += `---------------------------------------------\n`;
-                logSqlUpdates += scriptsAgrupadosPorTipo[tipo] + `\n`;
-            }
+
 
         } finally {
-            // Siempre reactivar triggers
-            await gestionarTriggers(client, 'ENABLE');
+            //await gestionarTriggers(client, 'ENABLE');
         }
 
         // Actualizar Log BD (Pendiente)
@@ -706,10 +538,10 @@ app.post('/api/upload-matriz', upload.fields([
         // Generar Lógica Agrupada (Sección B)
         // =====================================================================
         let logSqlAgrupadoPre = ""; // Variable nueva para el script PRE
-        //console.log("CONTENIDO DE LA VARIABLE:", datosExcel);
+        
         try {
             // Obtenemos el OBJETO con los dos scripts
-            const scriptsGen = procesador.generarSQLAgrupado(fase1.datosExcel);
+            const scriptsGen = procesador.generarSQLAgrupado(resultadosRaw);
             
             // Asignamos a las variables
             logSqlAgrupado = scriptsGen.sqlAgrupadoPost;    // Script POST (Columna B)
@@ -723,11 +555,11 @@ app.post('/api/upload-matriz', upload.fields([
         // =====================================================================
 
 
-        // Calculamos las estadísticas reales basándonos en el reporte detallado
+        // Calculamos las estadísticas afuera para asegurar que la variable siempre exista
         const statsJson = {
-            total: reporteDetallado.length,
-            correctos: reporteDetallado.filter(r => r.estado === 'OK').length,
-            errores: reporteDetallado.filter(r => r.estado === 'ERROR').length
+            total: resultados.length,
+            correctos: resultados.filter(r => r.estado === 'OK').length,
+            errores: resultados.filter(r => r.estado === 'ERROR').length
         };
 
 
@@ -741,9 +573,6 @@ app.post('/api/upload-matriz', upload.fields([
             sqlUpdates: logSqlUpdates,   // Guardamos Updates
             sqlReverse: logSqlReverse,
             sqlSelects: logSqlSelects,   // Guardamos Selects
-            preConsultasPorTipo: preConsultasAgrupadasPorTipo, // <--- GUARDAMOS CONSULTAS PRE POR TIPO
-            postConsultasPorTipo: postConsultasAgrupadasPorTipo, // <--- GUARDAMOS CONSULTAS POST PARA PARTE 5
-            updatesPorTipo: scriptsAgrupadosPorTipo,           // <--- NUEVO: GUARDAMOS UPDATES POR TIPO
 
             sqlAgrupado: logSqlAgrupado, //  Guardamos la Sección B
             sqlAgrupadoPre: logSqlAgrupadoPre,
@@ -751,11 +580,10 @@ app.post('/api/upload-matriz', upload.fields([
 
             estadisticas: statsJson, // guardamos registro JSON de totales por tipo de modificacion
             nombreMemo: nombreMemo,
-            asuntoMemo: asuntoExtraido,
             reporte: reporteDetallado,
             nombreArchivoExcel: originalName,
 
-            // === PARA QUE EL EXCEL NO SALGA VACÍO ===
+            // === ESTO ES LO QUE FALTA PARA QUE EL EXCEL NO SALGA VACÍO ===
             datosPre: accumulatedPreData,   
             datosPost: accumulatedPostData
         });
@@ -763,44 +591,6 @@ app.post('/api/upload-matriz', upload.fields([
         // Respuesta al Cliente
         const totalOk = reporteDetallado.filter(r => r.estado === 'OK').length;
         const totalErr = reporteDetallado.filter(r => r.estado === 'ERROR').length;
-        
-        // --- GENERACIÓN SILENCIOSA DEL ARCHIVO .TMP EN EL SERVIDOR ---
-        try {
-            let textoPreTmp = "===================================================\n";
-            textoPreTmp += `ARCHIVO TEMPORAL DE VERIFICACIÓN (.TMP) - CONSULTAS PRE\n`;
-            textoPreTmp += `Memorando: ${nombreMemo || 'Sin Nombre'}\n`;
-            textoPreTmp += `Fecha de Simulación: ${new Date().toLocaleString()}\n`;
-            textoPreTmp += "===================================================\n\n";
-
-            Object.keys(preConsultasAgrupadasPorTipo).forEach(tipo => {
-                textoPreTmp += `---------------------------------------------------\n`;
-                textoPreTmp += `-- TIPO DE CONSULTA DE VERIFICACIÓN: ${tipo}\n`;
-                textoPreTmp += `---------------------------------------------------\n`;
-                textoPreTmp += preConsultasAgrupadasPorTipo[tipo] + "\n";
-            });
-
-            // Guarda el archivo de forma garantizada junto al código fuente
-            const fs = require('fs');
-            const path = require('path');
-            const nombreLimpio = (nombreMemo || 'consultas').replace(/[^a-zA-Z0-9-_]/g, '_');
-            
-            // Forzamos la escritura en el directorio actual del script (__dirname)
-            const rutaFinal = path.join(__dirname, `${nombreLimpio}.tmp`);
-            fs.writeFileSync(rutaFinal, textoPreTmp, 'utf-8');
-            
-            console.log(`\n=========================================================`);
-            console.log(`[EXITO] ARCHIVO .TMP CREADO EXACTAMENTE EN:`);
-            console.log(rutaFinal);
-            console.log(`=========================================================\n`);
-
-            } catch (errorTmp) {
-                console.log(`\n=========================================================`);
-                console.error("[ERROR GRAVE] NO SE PUDO CREAR EL ARCHIVO .TMP:");
-                console.error(errorTmp);
-                console.log(`=========================================================\n`);
-            }
-        // -----------------------------------------------------------
-
         
         res.json({ 
             success: true, 
@@ -816,12 +606,7 @@ app.post('/api/upload-matriz', upload.fields([
         });
 
     } catch (error) {
-        console.error("\n=======================================================");
-        console.error("💥 ERROR DETECTADO:");
-        console.error("Mensaje:", error.message);
-        console.error("Ubicación exactas (Stack):");
-        console.error(error.stack);
-        console.error("=======================================================\n");
+        console.error("ERROR UPLOAD:", error);
         if (client) { try{ await client.query('ROLLBACK'); client.release(); } catch(e){} }
         if (typeof logId !== 'undefined' && logId) await db.query(`UPDATE modificacion_titulos_app.logs_app SET estado = 'ERROR PROCESO' WHERE id = $1`, [logId]).catch(e=>{});
         if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -851,17 +636,19 @@ app.post('/api/commit', async (req, res) => {
         const zipFileName = `REPORTE_${tx.nombreMemo}_${fechaStr}.zip`;
         const zipPath = path.join(RESULTADOS_DIR, zipFileName);
 
-        // --- INICIO BLOQUE ZIP (Word + SQL) ---
+        // A) Generamos el Excel en memoria (Buffer)
+        const bufferExcel = await generarExcelResultados(tx);
+
+
         
-        // 1. Generar el Word
+        // --- INICIO BLOQUE ZIP (Word + TXT) ---
+        
+        // 1. Generar el Word (usando el nombre del Excel que guardamos en el paso anterior)
+        // Si por alguna razón no hay nombre, usa uno por defecto
         const nombreExcel = tx.nombreArchivoExcel || "Matriz_Datos.xlsx";
-        const docxBuffer = await generarReporteDocx(tx.nombreMemo, tx.reporte, nombreExcel, tx.asuntoMemo);
+        const docxBuffer = await generarReporteDocx(tx.nombreMemo, tx.reporte, nombreExcel);
 
-        // 2. Delegar la generación del SQL formateado al módulo especializado
-        const sqlString = generarSqlResultados(tx);
-        const sqlBuffer = Buffer.from(sqlString, 'utf-8');
-
-        // 3. Crear el flujo del ZIP
+        // 2. Crear el flujo del ZIP
         const output = fs.createWriteStream(zipPath);
         const archive = archiver('zip', { zlib: { level: 9 } }); // Compresión máxima
 
@@ -874,12 +661,11 @@ app.post('/api/commit', async (req, res) => {
         archive.pipe(output);
 
         // 4. Agregar los archivos al paquete
+        // A) El TXT (usamos la variable 'contenidoArchivo' que ya creaste arriba)
+        archive.append(bufferExcel, { name: `REPORTE_TECNICO_${tx.nombreMemo}.xlsx` });
         
-        // A) El Word (usamos el buffer generado)
+        // B) El Word (usamos el buffer generado)
         archive.append(docxBuffer, { name: `Detalle_Atencion_${tx.nombreMemo}.docx` });
-
-        // B) El SQL (Añadimos el buffer del SQL al ZIP)
-        archive.append(sqlBuffer, { name: `Script_Resultados_${tx.nombreMemo}.sql` });
 
         // Finalizar y esperar
         await archive.finalize();
@@ -927,22 +713,5 @@ app.post('/api/rollback', async (req, res) => {
         activeTransactions.delete(transactionId); 
     }
 });
-
-
-app.get('/api/dev-db-status', (req, res) => { //lee .env para desplegar la conexion en la pantalla de login
-    const host = process.env.DB_HOST;
-    let textoBD = '';
-
-    if (host === '127.0.0.1' || host === 'localhost') {
-        textoBD = 'BD: localhost';
-    } else if (host === '10.181.1.125') {
-        textoBD = 'BD: 10.181.1.125';
-    } else if (host) {
-        textoBD = `BD: ${host}`; // Por si en el futuro agregas otro servidor
-    }
-
-    res.json({ texto: textoBD });
-});
-
 
 app.listen(PORT, () => console.log(`>>> Servidor iniciado en puerto ${PORT}`));
